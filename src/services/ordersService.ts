@@ -1,5 +1,8 @@
 import axios from 'axios';
 import { Order, OrderStatus } from '../types/types';
+import { google } from 'googleapis';
+
+const sheets = google.sheets('v4');
 
 const API_URL = import.meta.env.VITE_API_URL;
 if (!API_URL) {
@@ -23,7 +26,7 @@ export const saveOrder = async (orderData: Omit<Order, 'id'>): Promise<Order> =>
             ...orderData,
             customerId: getCustomerId()
         });
-        console.log('Order Data Saved:', response.data);
+        await saveOrderToSheet(response.data);
         return response.data;
     } catch (error: any) {
         console.error('Error saving order:', error.response?.data || error.message);
@@ -85,5 +88,60 @@ export const getOrderStats = async () => {
             completed: 0,
             cancelled: 0
         };
+    }
+};
+
+export const saveOrderToSheet = async (orderData: Order) => {
+    const auth = new google.auth.GoogleAuth({
+        keyFile: import.meta.env.SERVICE_ACCOUNT_FILE,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    try {
+        const client = await auth.getClient();
+        const spreadsheetId = import.meta.env.VITE_GOOGLE_SHEET_ID;
+
+        if (!spreadsheetId) {
+            throw new Error('Google Sheet ID not configured in environment variables');
+        }
+
+        // Get the current values in the sheet to find the next empty row
+        const getRowsResponse = await sheets.spreadsheets.values.get({
+            auth: client as any,
+            spreadsheetId,
+            range: 'Orders!A:A',
+        });
+
+        const rows = getRowsResponse.data.values || [];
+        const nextRow = rows.length + 1;
+
+        const range = `Orders!A${nextRow}`;
+
+        const values = [
+            [
+                orderData.timestamp,
+                orderData.id,
+                orderData.drinkName,
+                orderData.customerName,
+                orderData.seatingLocation,
+                orderData.toppings.join(', '),
+                orderData.specialInstructions || '',
+            ],
+        ];
+
+        const resource = {
+            values,
+        };
+
+        await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range,
+            valueInputOption: 'RAW',
+            resource,
+            auth: client,
+        } as any);
+        console.log('Order saved to Google Sheets successfully');
+    } catch (error: any) {
+        console.error('Error saving order to Google Sheets:', error.response?.data || error.message);
     }
 }; 

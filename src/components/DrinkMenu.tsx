@@ -77,25 +77,27 @@ const DrinkName = styled.span`
   border-bottom: 1px dashed #666;
   position: relative;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
 `;
 
 const MobileTooltip = styled.div<{ $isVisible: boolean }>`
   position: fixed;
   left: 50%;
-  bottom: 20px;
+  bottom: 40px;
   transform: translateX(-50%);
-  background: rgba(51, 51, 51, 0.95);
+  background: rgba(51, 51, 51, 0.98);
   color: white;
   padding: 1rem;
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 1rem;
   max-width: 90%;
   text-align: center;
   z-index: 1000;
   opacity: ${props => props.$isVisible ? 1 : 0};
   transition: opacity 0.2s ease;
   pointer-events: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 `;
 
 const MyOrdersButton = styled.button`
@@ -183,20 +185,26 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
     };
   }, []);
 
-  // Hide description after 3 seconds
   useEffect(() => {
-    if (activeDescription) {
-      const timer = setTimeout(() => {
-        setActiveDescription(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [activeDescription]);
+    const handleOutsideClick = () => setActiveDescription(null);
+    document.addEventListener('click', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, []);
 
   const handleDrinkInteraction = (description: string, e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setActiveDescription(description);
+    
+    setActiveDescription(prev => prev === description ? null : description);
+    
+    setTimeout(() => {
+      setActiveDescription(null);
+    }, 3000);
   };
 
   return (
@@ -213,9 +221,8 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
             {hotDrinks.map(drink => (
               <DrinkItemContainer key={drink.id}>
                 <DrinkName 
-                  title={drink.description}
                   onClick={(e) => handleDrinkInteraction(drink.description, e)}
-                  onTouchStart={(e) => handleDrinkInteraction(drink.description, e)}
+                  onTouchEnd={(e) => handleDrinkInteraction(drink.description, e)}
                 >
                   {drink.name}
                 </DrinkName>
@@ -232,9 +239,8 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
             {coldDrinks.map(drink => (
               <DrinkItemContainer key={drink.id}>
                 <DrinkName 
-                  title={drink.description}
                   onClick={(e) => handleDrinkInteraction(drink.description, e)}
-                  onTouchStart={(e) => handleDrinkInteraction(drink.description, e)}
+                  onTouchEnd={(e) => handleDrinkInteraction(drink.description, e)}
                 >
                   {drink.name}
                 </DrinkName>

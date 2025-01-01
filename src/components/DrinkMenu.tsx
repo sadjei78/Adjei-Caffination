@@ -28,6 +28,8 @@ const DrinkItemContainer = styled.div`
   align-items: center;
   background-color: rgba(255, 255, 255, 0.85);
   border-radius: 8px;
+  z-index: 10;
+  position: relative;
   
   .drink-name {
     font-size: 1.25rem;
@@ -79,6 +81,7 @@ const DrinkName = styled.span`
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   touch-action: manipulation;
+  z-index: 20;
 `;
 
 const MobileTooltip = styled.div<{ $isVisible: boolean }>`
@@ -96,7 +99,6 @@ const MobileTooltip = styled.div<{ $isVisible: boolean }>`
   z-index: 1000;
   opacity: ${props => props.$isVisible ? 1 : 0};
   transition: opacity 0.2s ease;
-  pointer-events: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 `;
 

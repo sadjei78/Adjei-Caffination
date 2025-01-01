@@ -159,6 +159,7 @@ const BaristaView: React.FC = () => {
         getOrders(),
         getOrderStats()
       ]);
+      console.log('Fetched Orders:', fetchedOrders);
       setOrders(fetchedOrders);
       setStats(orderStats);
     } catch (error) {
@@ -192,12 +193,12 @@ const BaristaView: React.FC = () => {
 
   if (loading) return <div>Loading orders...</div>;
 
-  const groupedOrders = orders.reduce((acc, order) => {
+  const groupedOrders = Array.isArray(orders) ? orders.reduce((acc, order) => {
     const status = order.orderStatus;
     if (!acc[status]) acc[status] = [];
     acc[status].push(order);
     return acc;
-  }, {} as Record<OrderStatus, Order[]>);
+  }, {} as Record<OrderStatus, Order[]>) : {} as Record<OrderStatus, Order[]>;
 
   return (
     <Container>

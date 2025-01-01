@@ -46,7 +46,9 @@ export const getUserOrders = async (customerName: string): Promise<Order[]> => {
     try {
         const customerId = getCustomerId();
         const response = await axios.get(`${API_URL}/orders/${customerId}`);
-        return response.data.filter((order: Order) => 
+        console.log('Response Data:', response.data);
+        const orders = Array.isArray(response.data) ? response.data : [];
+        return orders.filter((order: Order) => 
             order.customerName.toLowerCase() === customerName.toLowerCase()
         );
     } catch (error) {

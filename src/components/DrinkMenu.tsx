@@ -6,6 +6,7 @@ const MenuContainer = styled.div`
   position: relative;
   min-height: 100vh;
   padding: 2rem;
+  overflow-y: auto;
 `;
 
 const MenuColumn = styled.div`

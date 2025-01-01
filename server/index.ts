@@ -28,7 +28,10 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.VITE_SERVER_PORT || 3001;
 
-app.use(cors());
+app.use(cors({
+    origin: 'https://adjei-caffination.onrender.com',
+    methods: 'GET,POST,PUT,DELETE',
+}));
 app.use(express.json());
 
 const ORDERS_FILE = join(__dirname, 'data', 'orders.json');

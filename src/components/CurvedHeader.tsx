@@ -4,7 +4,7 @@ import styled from '@emotion/styled';
 const HeaderContainer = styled.div`
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 250px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -12,8 +12,8 @@ const HeaderContainer = styled.div`
 
 const CurvedText = styled.div`
   position: relative;
-  width: 400px;
-  height: 200px;
+  width: 600px;
+  height: 250px;
   
   @font-face {
     font-family: 'Kundiman';
@@ -26,15 +26,16 @@ const CurvedText = styled.div`
 
   text {
     font-family: 'Kundiman', sans-serif;
-    font-size: 48px;
-    fill: #333;
+    font-size: 86px;
+    fill: #B68D40;
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
   }
 `;
 
 const Logo = styled.img`
   position: absolute;
   top: 100px;
-  width: 200px;
+  width: 150px;
   opacity: 0.7;
 `;
 
@@ -42,10 +43,10 @@ const CurvedHeader: React.FC = () => {
   return (
     <HeaderContainer>
       <CurvedText>
-        <svg viewBox="0 0 400 200">
+        <svg viewBox="0 0 600 250">
           <path
             id="curve"
-            d="M 50 150 Q 200 50 350 150"
+            d="M 100 200 Q 300 50 500 200"
           />
           <text>
             <textPath href="#curve" textAnchor="middle" startOffset="50%">

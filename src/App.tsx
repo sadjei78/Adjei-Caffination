@@ -59,7 +59,11 @@ const App: React.FC = () => {
                 <>
                     <Navigation />
                     <CurvedHeader />
-                    <DrinkMenu drinks={drinks} onOrderClick={handleOrderClick} />
+                    <DrinkMenu 
+                        drinks={drinks} 
+                        onOrderClick={handleOrderClick} 
+                        onMyOrdersClick={() => setShowMyOrders(true)}
+                    />
                     {selectedDrink && (
                         <OrderForm
                             drink={selectedDrink}
@@ -67,12 +71,6 @@ const App: React.FC = () => {
                             onSubmit={handleOrderSubmit}
                         />
                     )}
-                    <button 
-                        onClick={() => setShowMyOrders(true)}
-                        style={{ margin: '2rem auto', display: 'block' }}
-                    >
-                        My Orders
-                    </button>
                     {showMyOrders && (
                         <MyOrders 
                             onClose={() => setShowMyOrders(false)}
@@ -84,12 +82,13 @@ const App: React.FC = () => {
         },
         {
             path: "/barista",
-            element: (
-                <>
-                    <Navigation />
-                    <BaristaView />
-                </>
-            ),
+            loader: () => {
+                if (!window.location.search.includes('admin=true')) {
+                    window.location.search = 'admin=true';
+                }
+                return null;
+            },
+            element: <BaristaView />
         },
     ]);
 

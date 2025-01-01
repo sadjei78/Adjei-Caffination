@@ -9,4 +9,17 @@ body {
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Add background only on menu page */
+.menu-page {
+  background-image: url('/assets/menu-bg.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: #ffffff;
 } 

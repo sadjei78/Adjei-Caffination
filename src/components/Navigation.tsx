@@ -30,6 +30,10 @@ const NavLink = styled(Link)<{ $active: boolean }>`
 
 const Navigation: React.FC = () => {
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const showNav = searchParams.get('admin') === 'true';
+
+  if (!showNav) return null;
 
   return (
     <Nav>

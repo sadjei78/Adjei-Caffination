@@ -196,13 +196,34 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
     };
   }, []);
 
-  const handleDrinkInteraction = (description: string) => {
-    setActiveDescription(prev => prev === description ? null : description);
+  useEffect(() => {
+    // Add event listeners to all drink names
+    const drinkNames = document.querySelectorAll('.drink-name');
     
-    setTimeout(() => {
-      setActiveDescription(null);
-    }, 3000);
-  };
+    const handleInteraction = (description: string) => {
+      setActiveDescription(description);
+      setTimeout(() => setActiveDescription(null), 3000);
+    };
+
+    drinkNames.forEach(element => {
+      element.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        handleInteraction(target.dataset.description || '');
+      });
+      
+      element.addEventListener('touchstart', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        handleInteraction(target.dataset.description || '');
+      });
+    });
+
+    return () => {
+      drinkNames.forEach(element => {
+        element.removeEventListener('click', () => {});
+        element.removeEventListener('touchstart', () => {});
+      });
+    };
+  }, [drinks]); // Re-run when drinks change
 
   return (
     <>
@@ -218,8 +239,8 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
             {hotDrinks.map(drink => (
               <DrinkItemContainer key={drink.id}>
                 <DrinkName 
-                  onClick={() => handleDrinkInteraction(drink.description)}
-                  onTouchStart={() => handleDrinkInteraction(drink.description)}
+                  className="drink-name"
+                  data-description={drink.description}
                 >
                   {drink.name}
                 </DrinkName>
@@ -236,8 +257,8 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
             {coldDrinks.map(drink => (
               <DrinkItemContainer key={drink.id}>
                 <DrinkName 
-                  onClick={() => handleDrinkInteraction(drink.description)}
-                  onTouchStart={() => handleDrinkInteraction(drink.description)}
+                  className="drink-name"
+                  data-description={drink.description}
                 >
                   {drink.name}
                 </DrinkName>

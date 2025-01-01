@@ -23,9 +23,10 @@ export const saveOrder = async (orderData: Omit<Order, 'id'>): Promise<Order> =>
             ...orderData,
             customerId: getCustomerId()
         });
+        console.log('Order Data Saved:', response.data);
         return response.data;
-    } catch (error) {
-        console.error('Error saving order:', error);
+    } catch (error: any) {
+        console.error('Error saving order:', error.response?.data || error.message);
         throw error;
     }
 };

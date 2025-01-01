@@ -93,13 +93,14 @@ export const getOrderStats = async () => {
 
 export const saveOrderToSheet = async (orderData: Order) => {
     const auth = new google.auth.GoogleAuth({
-        keyFile: import.meta.env.SERVICE_ACCOUNT_FILE,
+        keyFile: process.env.SERVICE_ACCOUNT_FILE,
         scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
 
     try {
         const client = await auth.getClient();
-        const spreadsheetId = import.meta.env.VITE_GOOGLE_SHEET_ID;
+        const sheets = google.sheets({ version: 'v4', auth: client });
+        const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
         if (!spreadsheetId) {
             throw new Error('Google Sheet ID not configured in environment variables');
@@ -107,7 +108,6 @@ export const saveOrderToSheet = async (orderData: Order) => {
 
         // Get the current values in the sheet to find the next empty row
         const getRowsResponse = await sheets.spreadsheets.values.get({
-            auth: client as any,
             spreadsheetId,
             range: 'Orders!A:A',
         });
@@ -133,15 +133,16 @@ export const saveOrderToSheet = async (orderData: Order) => {
             values,
         };
 
+        // Append the new order to the sheet
         await sheets.spreadsheets.values.append({
             spreadsheetId,
             range,
             valueInputOption: 'RAW',
             resource,
-            auth: client,
-        } as any);
+        });
+
         console.log('Order saved to Google Sheets successfully');
     } catch (error: any) {
-        console.error('Error saving order to Google Sheets:', error.response?.data || error.message);
+        console.error('Error saving order to Google Sheets:', error.message || error);
     }
 }; 

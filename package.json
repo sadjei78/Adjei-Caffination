@@ -9,13 +9,12 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "server": "NODE_ENV=development node --loader ts-node/esm server/index.ts",
-    "start": "concurrently \"npm run server\" \"npm run dev\""
+    "start": "concurrently \"npm run dev\" \"npm run server\""
   },
   "dependencies": {
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "axios": "^1.7.9",
-    "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "react": "^18.2.0",
@@ -33,6 +32,7 @@
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^9.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2",
     "vite": "^4.0.0"

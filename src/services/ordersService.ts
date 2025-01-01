@@ -1,7 +1,10 @@
 import axios from 'axios';
 import { Order, OrderStatus } from '../types/types';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL;
+if (!API_URL) {
+    throw new Error('API URL not configured in environment variables');
+}
 
 // Generate or retrieve customer ID
 const getCustomerId = (): string => {

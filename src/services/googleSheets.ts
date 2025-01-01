@@ -1,7 +1,11 @@
 import axios from 'axios';
 import { DrinkItem, Topping } from '../types/types';
 
-const SPREADSHEET_ID = '1C93RkvCJHYjDBLUB2HGMirstf_APmGg8n7CeHIlFdNo';
+const SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_SHEET_ID;
+if (!SPREADSHEET_ID) {
+    throw new Error('Google Sheet ID not configured in environment variables');
+}
+
 const MENU_SHEET = 'Menu';
 const TOPPINGS_SHEET = 'Toppings';
 

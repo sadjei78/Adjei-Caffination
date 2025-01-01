@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { DrinkItem } from './types/types';
 import { fetchDrinkMenu } from './services/googleSheets';
@@ -21,7 +21,7 @@ interface OrderData {
   timestamp: string;
 }
 
-function App() {
+const App: React.FC = () => {
     const [drinks, setDrinks] = useState<DrinkItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDrink, setSelectedDrink] = useState<DrinkItem | null>(null);
@@ -96,6 +96,6 @@ function App() {
     if (loading) return <div>Loading menu...</div>;
 
     return <RouterProvider router={router} />;
-}
+};
 
 export default App; 

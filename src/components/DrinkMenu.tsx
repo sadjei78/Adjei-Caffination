@@ -196,10 +196,7 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
     };
   }, []);
 
-  const handleDrinkInteraction = (description: string, e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const handleDrinkInteraction = (description: string) => {
     setActiveDescription(prev => prev === description ? null : description);
     
     setTimeout(() => {
@@ -221,8 +218,8 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
             {hotDrinks.map(drink => (
               <DrinkItemContainer key={drink.id}>
                 <DrinkName 
-                  onClick={(e) => handleDrinkInteraction(drink.description, e)}
-                  onTouchEnd={(e) => handleDrinkInteraction(drink.description, e)}
+                  onClick={() => handleDrinkInteraction(drink.description)}
+                  onTouchStart={() => handleDrinkInteraction(drink.description)}
                 >
                   {drink.name}
                 </DrinkName>
@@ -239,8 +236,8 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
             {coldDrinks.map(drink => (
               <DrinkItemContainer key={drink.id}>
                 <DrinkName 
-                  onClick={(e) => handleDrinkInteraction(drink.description, e)}
-                  onTouchEnd={(e) => handleDrinkInteraction(drink.description, e)}
+                  onClick={() => handleDrinkInteraction(drink.description)}
+                  onTouchStart={() => handleDrinkInteraction(drink.description)}
                 >
                   {drink.name}
                 </DrinkName>

@@ -5,7 +5,7 @@ import { DrinkItem } from '../types/types';
 const MenuContainer = styled.div`
   position: relative;
   min-height: 100vh;
-  padding: 2rem;
+  padding: 1rem;
   overflow-y: auto;
 `;
 
@@ -73,9 +73,10 @@ const DrinkItemContainer = styled.div`
 `;
 
 const DrinkName = styled.span`
-  cursor: help;
+  cursor: pointer;
   border-bottom: 1px dashed #666;
   position: relative;
+  -webkit-tap-highlight-color: transparent;
 `;
 
 const MobileTooltip = styled.div<{ $isVisible: boolean }>`
@@ -129,11 +130,32 @@ const CafeName = styled.div`
   font-variant: small-caps;
   text-align: center;
   color: #B68D40;
-  font-size: 3rem;
-  margin-top: -1.5rem;
-  margin-bottom: 2rem;
+  font-size: 2rem;
+  margin-top: -1rem;
+  margin-bottom: 1.5rem;
   letter-spacing: 1px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+
+  @media (min-width: 768px) {
+    font-size: 3rem;
+    margin-top: -1.5rem;
+    margin-bottom: 2rem;
+  }
+`;
+
+const MenuGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding: 0 2rem;
+  }
 `;
 
 interface DrinkMenuProps {
@@ -171,8 +193,9 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
     }
   }, [activeDescription]);
 
-  const handleDrinkClick = (description: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering parent click handlers
+  const handleDrinkInteraction = (description: string, e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setActiveDescription(description);
   };
 
@@ -184,21 +207,15 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
           My Orders
         </MyOrdersButton>
         <CafeName>Adjei Caffi-Nation</CafeName>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
-          gap: '2rem', 
-          maxWidth: '900px',
-          margin: '0 auto',
-          padding: '0 2rem'
-        }}>
+        <MenuGrid>
           <MenuColumn>
             <h2>Hot Drinks</h2>
             {hotDrinks.map(drink => (
               <DrinkItemContainer key={drink.id}>
                 <DrinkName 
                   title={drink.description}
-                  onClick={(e) => handleDrinkClick(drink.description, e)}
+                  onClick={(e) => handleDrinkInteraction(drink.description, e)}
+                  onTouchStart={(e) => handleDrinkInteraction(drink.description, e)}
                 >
                   {drink.name}
                 </DrinkName>
@@ -216,7 +233,8 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
               <DrinkItemContainer key={drink.id}>
                 <DrinkName 
                   title={drink.description}
-                  onClick={(e) => handleDrinkClick(drink.description, e)}
+                  onClick={(e) => handleDrinkInteraction(drink.description, e)}
+                  onTouchStart={(e) => handleDrinkInteraction(drink.description, e)}
                 >
                   {drink.name}
                 </DrinkName>
@@ -227,7 +245,7 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
               </DrinkItemContainer>
             ))}
           </MenuColumn>
-        </div>
+        </MenuGrid>
         <MobileTooltip $isVisible={!!activeDescription}>
           {activeDescription}
         </MobileTooltip>

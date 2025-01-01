@@ -176,59 +176,62 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
   };
 
   return (
-    <MenuContainer>
-      <MyOrdersButton onClick={onMyOrdersClick}>
-        My Orders
-      </MyOrdersButton>
-      <CafeName>Adjei Caffi-Nation</CafeName>
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
-        gap: '2rem', 
-        maxWidth: '900px',
-        margin: '0 auto',
-        padding: '0 2rem'
-      }}>
-        <MenuColumn>
-          <h2>Hot Drinks</h2>
-          {hotDrinks.map(drink => (
-            <DrinkItemContainer key={drink.id}>
-              <DrinkName 
-                title={drink.description}
-                onClick={(e) => handleDrinkClick(drink.description, e)}
-              >
-                {drink.name}
-              </DrinkName>
-              <div className="drink-actions">
-                <span className="price">${drink.price.toFixed(2)}</span>
-                <button onClick={() => onOrderClick(drink)}>Order</button>
-              </div>
-            </DrinkItemContainer>
-          ))}
-        </MenuColumn>
-        
-        <MenuColumn>
-          <h2>Cold Drinks</h2>
-          {coldDrinks.map(drink => (
-            <DrinkItemContainer key={drink.id}>
-              <DrinkName 
-                title={drink.description}
-                onClick={(e) => handleDrinkClick(drink.description, e)}
-              >
-                {drink.name}
-              </DrinkName>
-              <div className="drink-actions">
-                <span className="price">${drink.price.toFixed(2)}</span>
-                <button onClick={() => onOrderClick(drink)}>Order</button>
-              </div>
-            </DrinkItemContainer>
-          ))}
-        </MenuColumn>
-      </div>
-      <MobileTooltip $isVisible={!!activeDescription}>
-        {activeDescription}
-      </MobileTooltip>
-    </MenuContainer>
+    <>
+      <div className="menu-page" />
+      <MenuContainer>
+        <MyOrdersButton onClick={onMyOrdersClick}>
+          My Orders
+        </MyOrdersButton>
+        <CafeName>Adjei Caffi-Nation</CafeName>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr', 
+          gap: '2rem', 
+          maxWidth: '900px',
+          margin: '0 auto',
+          padding: '0 2rem'
+        }}>
+          <MenuColumn>
+            <h2>Hot Drinks</h2>
+            {hotDrinks.map(drink => (
+              <DrinkItemContainer key={drink.id}>
+                <DrinkName 
+                  title={drink.description}
+                  onClick={(e) => handleDrinkClick(drink.description, e)}
+                >
+                  {drink.name}
+                </DrinkName>
+                <div className="drink-actions">
+                  <span className="price">${drink.price.toFixed(2)}</span>
+                  <button onClick={() => onOrderClick(drink)}>Order</button>
+                </div>
+              </DrinkItemContainer>
+            ))}
+          </MenuColumn>
+          
+          <MenuColumn>
+            <h2>Cold Drinks</h2>
+            {coldDrinks.map(drink => (
+              <DrinkItemContainer key={drink.id}>
+                <DrinkName 
+                  title={drink.description}
+                  onClick={(e) => handleDrinkClick(drink.description, e)}
+                >
+                  {drink.name}
+                </DrinkName>
+                <div className="drink-actions">
+                  <span className="price">${drink.price.toFixed(2)}</span>
+                  <button onClick={() => onOrderClick(drink)}>Order</button>
+                </div>
+              </DrinkItemContainer>
+            ))}
+          </MenuColumn>
+        </div>
+        <MobileTooltip $isVisible={!!activeDescription}>
+          {activeDescription}
+        </MobileTooltip>
+      </MenuContainer>
+    </>
   );
 };
 

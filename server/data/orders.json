@@ -8,7 +8,7 @@
     "toppings": [
       "2"
     ],
-    "orderStatus": "On Hold",
+    "orderStatus": "Brewing",
     "timestamp": "2025-01-01T00:10:06.536Z",
     "customerId": "cust_1735686670543_w5iml8irl",
     "id": "a38d6eb5-2071-4a43-96ab-d970b8381148"
@@ -61,7 +61,7 @@
     "toppings": [
       "confetti sprinkles"
     ],
-    "orderStatus": "New",
+    "orderStatus": "On Hold",
     "timestamp": "2025-01-01T01:33:46.290Z",
     "customerId": "cust_1735686670543_w5iml8irl",
     "id": "925dfb00-a665-4ae0-84b0-ba166d423e17"
@@ -80,5 +80,20 @@
     "timestamp": "2025-01-01T04:57:57.110Z",
     "customerId": "cust_1735690524747_uudda0k9n",
     "id": "95356b92-6f24-45eb-87b9-d3875a2cfe4a"
+  },
+  {
+    "drinkName": "The Great Vanillini",
+    "temperature": "warm",
+    "customerName": "Will",
+    "seatingLocation": "bathroom",
+    "specialInstructions": "",
+    "toppings": [
+      "candy canes",
+      "caramel syrup"
+    ],
+    "orderStatus": "Delivered",
+    "timestamp": "2025-01-01T05:34:34.016Z",
+    "customerId": "cust_1735690524747_uudda0k9n",
+    "id": "73d2bd54-52b2-4de2-a1ed-08963b902cfb"
   }
 ]

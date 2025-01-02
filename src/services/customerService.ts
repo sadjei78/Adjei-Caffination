@@ -3,6 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 const CUSTOMER_ID_COOKIE = 'customerUUID';
 
 export const getCustomerId = (): string => {
+  // Debug: Log all cookies
+  console.log('Current cookies:', document.cookie);
+
   // Try to get existing ID from cookie
   let customerId = document.cookie
     .split('; ')
@@ -12,10 +15,19 @@ export const getCustomerId = (): string => {
   // If no existing ID, generate new one and set cookie
   if (!customerId) {
     customerId = uuidv4();
-    // Set cookie to expire in 1 year
-    const oneYear = 365 * 24 * 60 * 60 * 1000;
-    const expires = new Date(Date.now() + oneYear).toUTCString();
-    document.cookie = `${CUSTOMER_ID_COOKIE}=${customerId}; expires=${expires}; path=/`;
+    const isProduction = window.location.protocol === 'https:';
+    
+    // Build cookie string with proper attributes
+    const cookieOptions = [
+      `${CUSTOMER_ID_COOKIE}=${customerId}`,
+      'path=/',
+      'max-age=31536000',  // 1 year in seconds
+      'SameSite=Strict',
+      isProduction ? 'Secure' : ''
+    ].filter(Boolean).join('; ');
+
+    console.log('Setting new cookie:', cookieOptions);
+    document.cookie = cookieOptions;
   }
 
   return customerId;

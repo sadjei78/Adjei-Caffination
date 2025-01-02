@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import { DrinkItem } from '../types/types';
+import { getCustomerId } from '../services/customerService';
 
 const Container = styled.div`
   display: flex;
@@ -290,6 +291,12 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
     // Log as table
     console.log('localStorage contents:');
     console.table(storageData);
+  }, []);
+
+  useEffect(() => {
+    // Get or create customer ID when component mounts
+    const customerId = getCustomerId();
+    console.log('Customer ID in DrinkMenu:', customerId);
   }, []);
 
   return (

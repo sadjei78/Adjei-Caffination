@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Order, OrderStatus } from '../types/types';
-import { getUserOrders, updateOrderStatus } from '../services/ordersService';
+import { updateOrderStatus, getAllOrders } from '../services/ordersService';
 
 const Container = styled.div`
   padding: 20px;
@@ -16,9 +16,10 @@ const PageTitle = styled.h1`
 
 const Dashboard = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
 `;
 
 interface DashboardCardProps {
@@ -49,17 +50,12 @@ const OrderList = styled.div`
   gap: 20px;
 `;
 
-interface OrderItemProps {
-  $status?: OrderStatus;
-}
-
-const OrderItem = styled.div<OrderItemProps>`
-  border: 1px solid #ddd;
+const OrderCard = styled.div<{ status: string }>`
   padding: 20px;
   border-radius: 8px;
   background-color: ${props => {
-    switch (props.$status?.toLowerCase()) {
-      case 'new': return '#f3f3f3';
+    switch (props.status.toLowerCase()) {
+      case 'new': return '#e3f2fd';
       case 'brewing': return '#fff3e0';
       case 'on hold': return '#ffebee';
       case 'delivered': return '#e8f5e9';
@@ -69,10 +65,21 @@ const OrderItem = styled.div<OrderItemProps>`
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 `;
 
-const OrderDetails = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+const FeedbackSection = styled.div`
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+`;
+
+const Rating = styled.div`
+  font-weight: bold;
+  color: #f4b400;
+`;
+
+const Comment = styled.div`
+  font-style: italic;
+  color: #666;
+  margin-top: 0.5rem;
 `;
 
 const DrinkName = styled.div`
@@ -88,14 +95,28 @@ const CustomerInfo = styled.div`
 
 const Toppings = styled.div`
   color: #666;
+  margin: 8px 0;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  
+  strong {
+    color: #333;
+  }
 `;
 
 const SpecialInstructions = styled.div`
   font-style: italic;
   color: #666;
-  background-color: rgba(0,0,0,0.05);
+  margin: 8px 0;
   padding: 8px;
+  background-color: #fff3cd;
   border-radius: 4px;
+  border-left: 3px solid #ffc107;
+  
+  strong {
+    color: #333;
+  }
 `;
 
 const Timestamp = styled.div`
@@ -105,17 +126,20 @@ const Timestamp = styled.div`
 
 const StatusButtons = styled.div`
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
+  justify-content: space-between;
+  width: 100%;
 `;
 
 const Button = styled.button<{ $status?: string }>`
-  padding: 8px 16px;
-  margin: 0 4px;
+  flex: 1;
+  padding: 8px 4px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.9em;
+  white-space: nowrap;
   background-color: ${props => {
     const status = props.$status || 'default';
     switch (status.toLowerCase()) {
@@ -141,58 +165,181 @@ const NoOrders = styled.div`
   font-size: 1.2em;
 `;
 
+const OrderItem: React.FC<{ order: Order; onStatusUpdate: (id: string, status: OrderStatus) => void }> = ({
+  order,
+  onStatusUpdate,
+}) => {
+  // Parse Google Sheets date format and format relative dates
+  const formattedDate = order.timestamp ? (() => {
+    try {
+      const matches = order.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
+      if (matches) {
+        const [_, year, month, day, hour, minute, second] = matches;
+        const orderDate = new Date(
+          parseInt(year),
+          parseInt(month),
+          parseInt(day),
+          parseInt(hour),
+          parseInt(minute),
+          parseInt(second)
+        );
+        
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        // Format time
+        const timeStr = orderDate.toLocaleString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+
+        // Check if date is today/yesterday or needs full date
+        if (
+          orderDate.getDate() === today.getDate() &&
+          orderDate.getMonth() === today.getMonth() &&
+          orderDate.getFullYear() === today.getFullYear()
+        ) {
+          return `Today at ${timeStr}`;
+        } else if (
+          orderDate.getDate() === yesterday.getDate() &&
+          orderDate.getMonth() === yesterday.getMonth() &&
+          orderDate.getFullYear() === yesterday.getFullYear()
+        ) {
+          return `Yesterday at ${timeStr}`;
+        } else {
+          // Show year only if different from current year
+          const showYear = orderDate.getFullYear() !== today.getFullYear();
+          return orderDate.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: showYear ? 'numeric' : undefined,
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+        }
+      }
+      return 'Invalid date';
+    } catch (e) {
+      console.error('Error parsing date:', order.timestamp);
+      return 'Invalid date';
+    }
+  })() : 'No date';
+
+  return (
+    <OrderCard status={order.orderStatus}>
+      <DrinkName>{order.drinkName}</DrinkName>
+      <CustomerInfo>Customer: {order.customerName}</CustomerInfo>
+      
+      {/* Toppings Section */}
+      {order.toppings && order.toppings.length > 0 && (
+        <Toppings>
+          <strong>Toppings:</strong> {order.toppings.join(', ')}
+        </Toppings>
+      )}
+      
+      {/* Special Instructions Section */}
+      {order.specialInstructions && (
+        <SpecialInstructions>
+          <strong>Special Instructions:</strong> {order.specialInstructions}
+        </SpecialInstructions>
+      )}
+      
+      <CustomerInfo>Status: {order.orderStatus}</CustomerInfo>
+      <CustomerInfo>Location: {order.seatingLocation || 'Not specified'}</CustomerInfo>
+      <Timestamp>Last updated: {formattedDate}</Timestamp>
+      
+      {/* Feedback Section */}
+      {order.rating && (
+        <FeedbackSection>
+          <h4>Customer Feedback</h4>
+          <Rating>Rating: {'⭐'.repeat(order.rating)}</Rating>
+          {order.feedbackComment && (
+            <Comment>"{order.feedbackComment}"</Comment>
+          )}
+        </FeedbackSection>
+      )}
+
+      <StatusButtons>
+        {['New', 'Brewing', 'Delivered', 'On Hold'].map(status => (
+          <Button
+            key={status}
+            onClick={() => onStatusUpdate(order.id, status as OrderStatus)}
+            disabled={order.orderStatus === status}
+            $status={status.toLowerCase()}
+          >
+            {status}
+          </Button>
+        ))}
+      </StatusButtons>
+    </OrderCard>
+  );
+};
+
 const BaristaView: React.FC = () => {
+  const showView = window.location.search.includes('admin=true');
+  
+  if (!showView) {
+    return <div>Access Denied</div>;
+  }
+
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadOrders = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const fetchedOrders = await getUserOrders();
-      const sortedOrders = fetchedOrders.sort((a, b) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-      setOrders(sortedOrders);
-    } catch (err) {
-      setError('Failed to load orders');
-      console.error('Error loading orders:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadOrders();
-    const interval = setInterval(loadOrders, 10000);
+    const fetchOrders = async () => {
+      try {
+        const allOrders = await getAllOrders();
+        const latestOrders = allOrders.reduce((latest: Order[], order) => {
+          const existingIndex = latest.findIndex(o => o.id === order.id);
+          if (existingIndex === -1) {
+            latest.push(order);
+          } else if (new Date(order.timestamp) > new Date(latest[existingIndex].timestamp)) {
+            latest[existingIndex] = order;
+          }
+          return latest;
+        }, []);
+
+        setOrders(latestOrders);
+        setError(null);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        setError('Failed to fetch orders');
+      }
+    };
+
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     try {
       const updatedOrder = await updateOrderStatus(orderId, newStatus);
+      
       if (!updatedOrder) {
-        throw new Error('Failed to update order');
+        throw new Error(`Order not found: ${orderId}`);
       }
       
       setOrders(prevOrders => 
         prevOrders.map(order => 
-          order.id === orderId ? updatedOrder : order
+          order.id === orderId 
+            ? { ...order, orderStatus: newStatus }
+            : order
         )
       );
-    } catch (err) {
-      console.error('Error updating order:', err);
+
+    } catch (error) {
+      console.error('Error updating order:', error);
       alert('Failed to update order status. Please try again.');
     }
   };
-
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString();
-  };
-
-  if (loading) return <Container><PageTitle>Loading orders...</PageTitle></Container>;
-  if (error) return <Container><PageTitle>Error: {error}</PageTitle></Container>;
 
   const renderOrderList = (orders: Order[], title: string) => (
     <StatusSection>
@@ -200,35 +347,11 @@ const BaristaView: React.FC = () => {
       <OrderList>
         {orders.length > 0 ? (
           orders.map(order => (
-            <OrderItem key={order.id} $status={order.orderStatus}>
-              <OrderDetails>
-                <DrinkName>{order.drinkName}</DrinkName>
-                <CustomerInfo>Customer: {order.customerName}</CustomerInfo>
-                <CustomerInfo>Location: {order.seatingLocation}</CustomerInfo>
-                <CustomerInfo>Status: {order.orderStatus}</CustomerInfo>
-                <Timestamp>Last Updated: {formatTimestamp(order.timestamp)}</Timestamp>
-                {(order.toppings ?? []).length > 0 && (
-                  <Toppings>Toppings: {order.toppings!.join(', ')}</Toppings>
-                )}
-                {order.specialInstructions && (
-                  <SpecialInstructions>
-                    Special Instructions: {order.specialInstructions}
-                  </SpecialInstructions>
-                )}
-              </OrderDetails>
-              <StatusButtons>
-                {['New', 'On Hold', 'Brewing', 'Delivered'].map(status => (
-                  <Button
-                    key={status}
-                    onClick={() => handleStatusUpdate(order.id, status as OrderStatus)}
-                    disabled={order.orderStatus === status}
-                    $status={status.toLowerCase()}
-                  >
-                    {status}
-                  </Button>
-                ))}
-              </StatusButtons>
-            </OrderItem>
+            <OrderItem
+              key={order.id}
+              order={order}
+              onStatusUpdate={handleStatusUpdate}
+            />
           ))
         ) : (
           <NoOrders>No {title.toLowerCase()} orders</NoOrders>
@@ -249,13 +372,17 @@ const BaristaView: React.FC = () => {
           <h3>Brewing</h3>
           <div>{orders.filter(o => o.orderStatus === 'Brewing').length}</div>
         </DashboardCard>
+        <DashboardCard $bgColor="#ffebee">
+          <h3>On Hold</h3>
+          <div>{orders.filter(o => o.orderStatus === 'On Hold').length}</div>
+        </DashboardCard>
         <DashboardCard $bgColor="#e8f5e9">
           <h3>Completed</h3>
           <div>{orders.filter(o => o.orderStatus === 'Delivered').length}</div>
         </DashboardCard>
         <DashboardCard $bgColor="#f3e5f5">
           <h3>Total Orders</h3>
-          <div>{orders.length}</div>
+          <div>{orders.filter(o => o.orderStatus !== 'Cancelled').length}</div>
         </DashboardCard>
       </Dashboard>
 

@@ -2,19 +2,20 @@ import React from 'react';
 import styled from '@emotion/styled';
 import { Link, useMatch } from 'react-router-dom';
 
-interface NavLinkProps {
-  $isActive: boolean;
-}
-
-const NavLink = styled(Link)<NavLinkProps>`
+const NavLink = styled(Link)`
   text-decoration: none;
-  color: ${props => props.$isActive ? '#007bff' : '#333'};
-  font-weight: ${props => props.$isActive ? 'bold' : 'normal'};
+  color: #333;
+  font-weight: normal;
   padding: 8px 16px;
   border-radius: 4px;
   
   &:hover {
     background-color: #f8f9fa;
+  }
+
+  &.active {
+    color: #007bff;
+    font-weight: bold;
   }
 `;
 
@@ -25,20 +26,16 @@ const Nav = styled.nav`
 `;
 
 const Navigation: React.FC = () => {
-  const SHEET_ID = import.meta.env.VITE_GOOGLE_SHEET_ID;
-  const FORM_ID = import.meta.env.VITE_FORM_ID;
-
-  // Check these are properly configured
-  if (!SHEET_ID || !FORM_ID) {
-    console.error('Environment variables VITE_GOOGLE_SHEET_ID and VITE_FORM_ID are not set up correctly.');
-  }
+  const showNav = window.location.search.includes('admin=true');
+  
+  if (!showNav) return null;
 
   return (
     <Nav>
-      <NavLink to="/" $isActive={useMatch("/") !== null}>
+      <NavLink to="/?admin=true" className={useMatch("/") ? "active" : ""}>
         Order
       </NavLink>
-      <NavLink to="/barista" $isActive={useMatch("/barista") !== null}>
+      <NavLink to="/barista?admin=true" className={useMatch("/barista") ? "active" : ""}>
         Barista View
       </NavLink>
     </Nav>

@@ -16,18 +16,29 @@ export type OrderStatus = 'New' | 'Brewing' | 'On Hold' | 'Delivered' | 'Cancell
 
 export interface Order {
     id: string;
+    customerId: string;
     customerName: string;
     drinkName: string;
     toppings?: string[];
     specialInstructions?: string;
     orderStatus: OrderStatus;
     timestamp: string;
-    seatingLocation?: string;
+    rating?: number;
+    feedbackComment?: string;
+    feedbackTimestamp?: string;
     current?: string;
+    seatingLocation?: string;
 }
 
 export interface OrderFormData {
     customerName: string;
     seatingLocation: string;
     specialInstructions: string;
+}
+
+export interface OrderFeedback {
+    orderId: string;
+    rating: number;
+    comment: string;
+    timestamp: string;
 } 

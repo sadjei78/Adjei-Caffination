@@ -200,44 +200,81 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
   }, []);
 
   useEffect(() => {
-    const handleOutsideClick = () => setActiveDescription(null);
-    document.addEventListener('click', handleOutsideClick);
-    document.addEventListener('touchstart', handleOutsideClick);
-    
-    return () => {
-      document.removeEventListener('click', handleOutsideClick);
-      document.removeEventListener('touchstart', handleOutsideClick);
-    };
-  }, []);
-
-  useEffect(() => {
-    // Add event listeners to all drink names
     const drinkNames = document.querySelectorAll('.drink-name');
     
-    const handleInteraction = (description: string) => {
-      setActiveDescription(description);
-      setTimeout(() => setActiveDescription(null), 3000);
+    const handleInteraction = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const target = e.currentTarget as HTMLElement;
+      const description = target.dataset.description || '';
+      
+      if (activeDescription === description) {
+        setActiveDescription(null);
+      } else {
+        setActiveDescription(description);
+      }
     };
 
     drinkNames.forEach(element => {
-      element.addEventListener('click', (e) => {
-        const target = e.currentTarget as HTMLElement;
-        handleInteraction(target.dataset.description || '');
-      });
-      
-      element.addEventListener('touchstart', (e) => {
-        const target = e.currentTarget as HTMLElement;
-        handleInteraction(target.dataset.description || '');
-      });
+      element.addEventListener('click', handleInteraction);
+      element.addEventListener('touchend', handleInteraction);
     });
 
     return () => {
       drinkNames.forEach(element => {
-        element.removeEventListener('click', () => {});
-        element.removeEventListener('touchstart', () => {});
+        element.removeEventListener('click', handleInteraction);
+        element.removeEventListener('touchend', handleInteraction);
       });
     };
-  }, [drinks]); // Re-run when drinks change
+  }, [drinks, activeDescription]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if ((e.target as HTMLElement).closest('.drink-name')) {
+        return;
+      }
+      setActiveDescription(null);
+    };
+
+    document.addEventListener('click', handleOutsideClick);
+    document.addEventListener('touchend', handleOutsideClick);
+    
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+      document.removeEventListener('touchend', handleOutsideClick);
+    };
+  }, []);
+
+  useEffect(() => {
+    const drinkNames = document.querySelectorAll('.drink-name');
+    
+    const handleInteraction = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const target = e.currentTarget as HTMLElement;
+      const description = target.dataset.description || '';
+      
+      if (activeDescription === description) {
+        setActiveDescription(null);
+      } else {
+        setActiveDescription(description);
+      }
+    };
+
+    drinkNames.forEach(element => {
+      element.addEventListener('click', handleInteraction);
+      element.addEventListener('touchend', handleInteraction);
+    });
+
+    return () => {
+      drinkNames.forEach(element => {
+        element.removeEventListener('click', handleInteraction);
+        element.removeEventListener('touchend', handleInteraction);
+      });
+    };
+  }, [drinks, activeDescription]);
 
   useEffect(() => {
     // Create array of localStorage entries

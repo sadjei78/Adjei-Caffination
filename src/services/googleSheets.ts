@@ -15,11 +15,9 @@ export const fetchDrinkMenu = async (): Promise<DrinkItem[]> => {
             `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${MENU_SHEET}`
         );
         
-        // Remove Google's response wrapper
         const jsonStr = response.data.substring(47).slice(0, -2);
         const json = JSON.parse(jsonStr);
         
-        // Map data (removed slice(1) to include all rows)
         return json.table.rows.map((row: any) => ({
             id: row.c[0]?.v?.toString() || '',
             name: row.c[1]?.v || '',
@@ -30,8 +28,8 @@ export const fetchDrinkMenu = async (): Promise<DrinkItem[]> => {
             temperature: row.c[4]?.v?.toString().toLowerCase() || 'warm'
         })).filter((drink: DrinkItem) => drink.id && drink.name);
     } catch (error) {
-        console.error('Error fetching drink menu:', error);
-        return [];
+        console.error('Failed to fetch menu:', error);
+        throw error; // Let the caller handle the error
     }
 };
 

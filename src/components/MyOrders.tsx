@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
-import { Order } from '../types/types';
-import { getUserOrders, updateOrderStatus } from '../services/ordersService';
+import { Order, OrderFeedback } from '../types/types';
+import { updateOrderStatus, getAllOrders, saveFeedback } from '../services/ordersService';
+import FeedbackForm from './FeedbackForm';
+import { toast } from 'react-hot-toast';
 
 const Dialog = styled.div`
   position: fixed;
@@ -93,37 +95,50 @@ interface MyOrdersProps {
 const MyOrders: React.FC<MyOrdersProps> = ({ onClose, customerName }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showFeedback, setShowFeedback] = useState<string | null>(null);
+
+  const loadOrders = async () => {
+    setLoading(true);
+    try {
+      const customerId = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('customerUUID'))
+        ?.split('=')[1];
+
+      if (!customerId) {
+        throw new Error('No customer ID found');
+        return;
+      }
+
+      const allOrders = await getAllOrders();
+      const customerOrders = allOrders
+        .filter(order => order.customerId === customerId)
+        .sort((a, b) => {
+          // First, separate active and completed orders
+          const isCompletedA = ['Delivered', 'Cancelled'].includes(a.orderStatus);
+          const isCompletedB = ['Delivered', 'Cancelled'].includes(b.orderStatus);
+          
+          if (isCompletedA !== isCompletedB) {
+            return isCompletedA ? 1 : -1; // Active orders first
+          }
+          
+          // Then sort by timestamp within each group
+          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        });
+      
+      setOrders(customerOrders);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadOrders = async () => {
-      if (customerName) {
-        setLoading(true);
-        try {
-          const userOrders = await getUserOrders();
-          const sortedOrders = userOrders.sort((a, b) => {
-            const statusPriority = {
-              'New': 0,
-              'On Hold': 1,
-              'Brewing': 2,
-              'Delivered': 3,
-              'Cancelled': 4
-            };
-            
-            const priorityDiff = statusPriority[a.orderStatus] - statusPriority[b.orderStatus];
-            if (priorityDiff !== 0) return priorityDiff;
-            
-            return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-          });
-          
-          setOrders(sortedOrders);
-        } catch (error) {
-          console.error('Error loading orders:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
     loadOrders();
+    // Refresh orders every 30 seconds
+    const interval = setInterval(loadOrders, 30000);
+    return () => clearInterval(interval);
   }, [customerName]);
 
   const handleCancel = async (orderId: string) => {
@@ -139,6 +154,103 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onClose, customerName }) => {
     }
   };
 
+  const handleFeedbackSubmit = async (feedback: OrderFeedback) => {
+    try {
+      await saveFeedback(feedback);
+      setShowFeedback(null);
+      // Show success toast
+      toast.success('Thank you for your feedback!');
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      // Show error toast
+      toast.error('Failed to submit feedback. Please try again.');
+    }
+  };
+
+  const renderOrderCard = (order: Order) => {
+    // Parse Google Sheets date format and format relative dates
+    const formattedDate = order.timestamp ? (() => {
+      try {
+        const matches = order.timestamp.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
+        if (matches) {
+          const [_, year, month, day, hour, minute, second] = matches;
+          const orderDate = new Date(
+            parseInt(year),
+            parseInt(month),
+            parseInt(day),
+            parseInt(hour),
+            parseInt(minute),
+            parseInt(second)
+          );
+          
+          const today = new Date();
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          
+          // Format time
+          const timeStr = orderDate.toLocaleString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+
+          // Check if date is today/yesterday or needs full date
+          if (
+            orderDate.getDate() === today.getDate() &&
+            orderDate.getMonth() === today.getMonth() &&
+            orderDate.getFullYear() === today.getFullYear()
+          ) {
+            return `Today at ${timeStr}`;
+          } else if (
+            orderDate.getDate() === yesterday.getDate() &&
+            orderDate.getMonth() === yesterday.getMonth() &&
+            orderDate.getFullYear() === yesterday.getFullYear()
+          ) {
+            return `Yesterday at ${timeStr}`;
+          } else {
+            // Show year only if different from current year
+            const showYear = orderDate.getFullYear() !== today.getFullYear();
+            return orderDate.toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: showYear ? 'numeric' : undefined,
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            });
+          }
+        }
+        return 'Invalid date';
+      } catch (e) {
+        console.error('Error parsing date:', order.timestamp);
+        return 'Invalid date';
+      }
+    })() : 'No date';
+
+    return (
+      <OrderItem key={order.id} $status={order.orderStatus}>
+        <div>
+          <div>{order.drinkName}</div>
+          <div className={`status ${order.orderStatus.toLowerCase()}`}>
+            {order.orderStatus}
+          </div>
+          <div>{formattedDate}</div>
+        </div>
+        {order.orderStatus === 'Delivered' && !order.rating && (
+          <FeedbackButton onClick={() => setShowFeedback(order.id)}>
+            Leave Feedback
+          </FeedbackButton>
+        )}
+        <Button
+          onClick={() => handleCancel(order.id)}
+          disabled={['Delivered', 'Cancelled'].includes(order.orderStatus)}
+        >
+          Cancel
+        </Button>
+      </OrderItem>
+    );
+  };
+
   if (loading) return <div>Loading orders...</div>;
 
   return (
@@ -146,30 +258,34 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onClose, customerName }) => {
       <Dialog onClick={e => e.stopPropagation()}>
         <h2>My Orders</h2>
         <OrderList>
-          {orders.map(order => (
-            <OrderItem key={order.id} $status={order.orderStatus}>
-              <div>
-                <div>{order.drinkName}</div>
-                <div className={`status ${order.orderStatus.toLowerCase()}`}>
-                  {order.orderStatus}
-                </div>
-                <div>{new Date(order.timestamp).toLocaleString()}</div>
-              </div>
-              <Button
-                onClick={() => handleCancel(order.id)}
-                disabled={['Delivered', 'Cancelled'].includes(order.orderStatus)}
-              >
-                Cancel
-              </Button>
-            </OrderItem>
-          ))}
+          {orders.map(renderOrderCard)}
           {orders.length === 0 && (
             <div>No orders found</div>
           )}
         </OrderList>
+        {showFeedback && (
+          <FeedbackForm
+            orderId={showFeedback}
+            onSubmit={handleFeedbackSubmit}
+            onClose={() => setShowFeedback(null)}
+          />
+        )}
       </Dialog>
     </Overlay>
   );
 };
+
+const FeedbackButton = styled.button`
+  padding: 8px 16px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #218838;
+  }
+`;
 
 export default MyOrders; 

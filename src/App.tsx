@@ -9,6 +9,7 @@ import OrderForm from './components/OrderForm';
 import MyOrders from './components/MyOrders';
 import BaristaView from './components/BaristaView';
 import Navigation from './components/Navigation';
+import { Toaster } from 'react-hot-toast';
 
 interface OrderData {
   drinkName: string;
@@ -44,9 +45,7 @@ const App: React.FC = () => {
     };
 
     const handleOrderSubmit = (orderData: OrderData) => {
-        const savedOrder = saveOrder(orderData);
-        console.log('Order saved:', savedOrder);
-        
+        saveOrder(orderData);
         localStorage.setItem('customerName', orderData.customerName);
         setCustomerName(orderData.customerName);
         setSelectedDrink(null);
@@ -57,6 +56,7 @@ const App: React.FC = () => {
             path: "/",
             element: (
                 <>
+                    <Toaster position="bottom-right" />
                     <Navigation />
                     <CurvedHeader />
                     <DrinkMenu 
@@ -82,13 +82,12 @@ const App: React.FC = () => {
         },
         {
             path: "/barista",
-            loader: () => {
-                if (!window.location.search.includes('admin=true')) {
-                    window.location.search = 'admin=true';
-                }
-                return null;
-            },
-            element: <BaristaView />
+            element: (
+                <>
+                    <Navigation />
+                    <BaristaView />
+                </>
+            ),
         },
     ]);
 

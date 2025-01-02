@@ -106,7 +106,8 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onClose, customerName }) => {
         ?.split('=')[1];
 
       if (!customerId) {
-        throw new Error('No customer ID found');
+        setOrders([]);
+        toast.error('Please refresh the page and try again');
         return;
       }
 
@@ -114,21 +115,20 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onClose, customerName }) => {
       const customerOrders = allOrders
         .filter(order => order.customerId === customerId)
         .sort((a, b) => {
-          // First, separate active and completed orders
           const isCompletedA = ['Delivered', 'Cancelled'].includes(a.orderStatus);
           const isCompletedB = ['Delivered', 'Cancelled'].includes(b.orderStatus);
           
           if (isCompletedA !== isCompletedB) {
-            return isCompletedA ? 1 : -1; // Active orders first
+            return isCompletedA ? 1 : -1;
           }
           
-          // Then sort by timestamp within each group
           return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
         });
       
       setOrders(customerOrders);
     } catch (error) {
       console.error('Error loading orders:', error);
+      toast.error('Unable to load orders. Please try again.');
     } finally {
       setLoading(false);
     }

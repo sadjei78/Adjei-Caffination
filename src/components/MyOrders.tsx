@@ -99,7 +99,7 @@ const MyOrders: React.FC<MyOrdersProps> = ({ onClose, customerName }) => {
       if (customerName) {
         setLoading(true);
         try {
-          const userOrders = await getUserOrders(customerName);
+          const userOrders = await getUserOrders();
           const sortedOrders = userOrders.sort((a, b) => {
             const statusPriority = {
               'New': 0,

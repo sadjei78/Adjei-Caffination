@@ -1,272 +1,268 @@
 import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Order, OrderStatus } from '../types/types';
-import { getOrders, updateOrderStatus, getOrderStats } from '../services/ordersService';
+import { getUserOrders, updateOrderStatus } from '../services/ordersService';
 
 const Container = styled.div`
-  padding: 2rem;
+  padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
 `;
 
-const OrdersGrid = styled.div`
+const PageTitle = styled.h1`
+  color: #333;
+  margin-bottom: 20px;
+`;
+
+const Dashboard = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+`;
+
+interface DashboardCardProps {
+  $bgColor: string;
+}
+
+const DashboardCard = styled.div<DashboardCardProps>`
+  padding: 20px;
+  border-radius: 8px;
+  background-color: ${props => props.$bgColor};
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 `;
 
 const StatusSection = styled.div`
-  margin-bottom: 2rem;
-
-  h2 {
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #eee;
-  }
+  margin-bottom: 30px;
 `;
 
-const OrderCard = styled.div<{ $status: string }>`
-  padding: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.2s;
-  background: ${({ $status }) => {
-    switch ($status.toLowerCase()) {
-      case 'new': return '#e3f2fd';
-      case 'brewing': return '#fff3e0';
-      case 'on hold': return '#fce4ec';
-      case 'delivered': return '#e8f5e9';
-      case 'cancelled': return '#ffebee';
-      default: return 'white';
-    }
-  }};
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-
-  h3 {
-    margin: 0 0 0.5rem;
-    color: #333;
-  }
-
-  p {
-    margin: 0.25rem 0;
-    color: #666;
-  }
+const StatusTitle = styled.h2`
+  color: #333;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
 `;
 
-const StatsContainer = styled.div`
+const OrderList = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 `;
 
-const StatCard = styled.div<{ $type: 'new' | 'brewing' | 'completed' | 'total' }>`
-  padding: 1.5rem;
+interface OrderItemProps {
+  $status?: OrderStatus;
+}
+
+const OrderItem = styled.div<OrderItemProps>`
+  border: 1px solid #ddd;
+  padding: 20px;
   border-radius: 8px;
-  background: ${({ $type }) => {
-    switch ($type) {
-      case 'new': return '#e3f2fd';
+  background-color: ${props => {
+    switch (props.$status?.toLowerCase()) {
+      case 'new': return '#f3f3f3';
       case 'brewing': return '#fff3e0';
-      case 'completed': return '#e8f5e9';
-      case 'total': return '#f3e5f5';
+      case 'on hold': return '#ffebee';
+      case 'delivered': return '#e8f5e9';
+      default: return '#ffffff';
     }
   }};
-  order: ${({ $type }) => $type === 'total' ? '4' : 'initial'};
-
-  h3 {
-    margin: 0;
-    color: #333;
-  }
-
-  p {
-    margin: 0.5rem 0 0;
-    font-size: 2rem;
-    font-weight: bold;
-    color: ${({ $type }) => {
-      switch ($type) {
-        case 'new': return '#1976d2';
-        case 'brewing': return '#f57c00';
-        case 'completed': return '#388e3c';
-        case 'total': return '#7b1fa2';
-      }
-    }};
-  }
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 `;
 
-const OrderDialog = styled.div`
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-  width: 90%;
-  z-index: 1000;
+const OrderDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 `;
 
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+const DrinkName = styled.div`
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #333;
 `;
 
-const StatusButton = styled.button<{ $status: string }>`
-  padding: 0.5rem 1rem;
-  margin: 0 0.5rem;
+const CustomerInfo = styled.div`
+  font-size: 1em;
+  color: #666;
+`;
+
+const Toppings = styled.div`
+  color: #666;
+`;
+
+const SpecialInstructions = styled.div`
+  font-style: italic;
+  color: #666;
+  background-color: rgba(0,0,0,0.05);
+  padding: 8px;
+  border-radius: 4px;
+`;
+
+const Timestamp = styled.div`
+  font-size: 0.9em;
+  color: #999;
+`;
+
+const StatusButtons = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+`;
+
+const Button = styled.button<{ $status?: string }>`
+  padding: 8px 16px;
+  margin: 0 4px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  background: ${props => {
-    switch (props.$status) {
-      case 'Brewing': return '#fff3e0';
-      case 'Delivered': return '#e8f5e9';
-      case 'On Hold': return '#ffebee';
-      default: return '#f5f5f5';
+  background-color: ${props => {
+    const status = props.$status || 'default';
+    switch (status.toLowerCase()) {
+      case 'new': return '#2196f3';
+      case 'brewing': return '#ff9800';
+      case 'on hold': return '#f44336';
+      case 'delivered': return '#4caf50';
+      default: return '#e0e0e0';
     }
   }};
-  
-  &:hover {
-    opacity: 0.8;
+  color: white;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
+`;
+
+const NoOrders = styled.div`
+  text-align: center;
+  color: #666;
+  padding: 40px;
+  grid-column: 1 / -1;
+  font-size: 1.2em;
 `;
 
 const BaristaView: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [stats, setStats] = useState({
-    total: 0,
-    new: 0,
-    brewing: 0,
-    completed: 0,
-    cancelled: 0
-  });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadOrders = async () => {
     try {
       setLoading(true);
-      const [fetchedOrders, orderStats] = await Promise.all([
-        getOrders(),
-        getOrderStats()
-      ]);
-      console.log('Fetched Orders:', fetchedOrders);
-      setOrders(fetchedOrders);
-      setStats(orderStats);
-    } catch (error) {
-      console.error('Error loading barista data:', error);
+      setError(null);
+      const fetchedOrders = await getUserOrders();
+      const sortedOrders = fetchedOrders.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      setOrders(sortedOrders);
+    } catch (err) {
+      setError('Failed to load orders');
+      console.error('Error loading orders:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
-    // Refresh data every 30 seconds
-    const interval = setInterval(loadData, 30000);
+    loadOrders();
+    const interval = setInterval(loadOrders, 10000);
     return () => clearInterval(interval);
   }, []);
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     try {
       const updatedOrder = await updateOrderStatus(orderId, newStatus);
-      if (updatedOrder) {
-        setOrders(orders.map(order => 
-          order.id === orderId ? updatedOrder : order
-        ));
-        setSelectedOrder(updatedOrder);
-        await loadData(); // Refresh stats
+      if (!updatedOrder) {
+        throw new Error('Failed to update order');
       }
-    } catch (error) {
-      console.error('Error updating order status:', error);
+      
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId ? updatedOrder : order
+        )
+      );
+    } catch (err) {
+      console.error('Error updating order:', err);
+      alert('Failed to update order status. Please try again.');
     }
   };
 
-  if (loading) return <div>Loading orders...</div>;
+  const formatTimestamp = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString();
+  };
 
-  const groupedOrders = Array.isArray(orders) ? orders.reduce((acc, order) => {
-    const status = order.orderStatus;
-    if (!acc[status]) acc[status] = [];
-    acc[status].push(order);
-    return acc;
-  }, {} as Record<OrderStatus, Order[]>) : {} as Record<OrderStatus, Order[]>;
+  if (loading) return <Container><PageTitle>Loading orders...</PageTitle></Container>;
+  if (error) return <Container><PageTitle>Error: {error}</PageTitle></Container>;
+
+  const renderOrderList = (orders: Order[], title: string) => (
+    <StatusSection>
+      <StatusTitle>{title}</StatusTitle>
+      <OrderList>
+        {orders.length > 0 ? (
+          orders.map(order => (
+            <OrderItem key={order.id} $status={order.orderStatus}>
+              <OrderDetails>
+                <DrinkName>{order.drinkName}</DrinkName>
+                <CustomerInfo>Customer: {order.customerName}</CustomerInfo>
+                <CustomerInfo>Location: {order.seatingLocation}</CustomerInfo>
+                <CustomerInfo>Status: {order.orderStatus}</CustomerInfo>
+                <Timestamp>Last Updated: {formatTimestamp(order.timestamp)}</Timestamp>
+                {(order.toppings ?? []).length > 0 && (
+                  <Toppings>Toppings: {order.toppings!.join(', ')}</Toppings>
+                )}
+                {order.specialInstructions && (
+                  <SpecialInstructions>
+                    Special Instructions: {order.specialInstructions}
+                  </SpecialInstructions>
+                )}
+              </OrderDetails>
+              <StatusButtons>
+                {['New', 'On Hold', 'Brewing', 'Delivered'].map(status => (
+                  <Button
+                    key={status}
+                    onClick={() => handleStatusUpdate(order.id, status as OrderStatus)}
+                    disabled={order.orderStatus === status}
+                    $status={status.toLowerCase()}
+                  >
+                    {status}
+                  </Button>
+                ))}
+              </StatusButtons>
+            </OrderItem>
+          ))
+        ) : (
+          <NoOrders>No {title.toLowerCase()} orders</NoOrders>
+        )}
+      </OrderList>
+    </StatusSection>
+  );
 
   return (
     <Container>
-      <h1>Barista Dashboard</h1>
-      
-      <StatsContainer>
-        <StatCard $type="total">
-          <h3>Total Orders</h3>
-          <p>{stats.total}</p>
-        </StatCard>
-        <StatCard $type="new">
+      <PageTitle>Barista Dashboard</PageTitle>
+      <Dashboard>
+        <DashboardCard $bgColor="#e3f2fd">
           <h3>New Orders</h3>
-          <p>{stats.new}</p>
-        </StatCard>
-        <StatCard $type="brewing">
+          <div>{orders.filter(o => o.orderStatus === 'New').length}</div>
+        </DashboardCard>
+        <DashboardCard $bgColor="#fff3e0">
           <h3>Brewing</h3>
-          <p>{stats.brewing}</p>
-        </StatCard>
-        <StatCard $type="completed">
+          <div>{orders.filter(o => o.orderStatus === 'Brewing').length}</div>
+        </DashboardCard>
+        <DashboardCard $bgColor="#e8f5e9">
           <h3>Completed</h3>
-          <p>{stats.completed}</p>
-        </StatCard>
-      </StatsContainer>
+          <div>{orders.filter(o => o.orderStatus === 'Delivered').length}</div>
+        </DashboardCard>
+        <DashboardCard $bgColor="#f3e5f5">
+          <h3>Total Orders</h3>
+          <div>{orders.length}</div>
+        </DashboardCard>
+      </Dashboard>
 
-      {['New', 'Brewing', 'On Hold', 'Delivered'].map(status => (
-        <StatusSection key={status}>
-          <h2>{status}</h2>
-          <OrdersGrid>
-            {groupedOrders[status as OrderStatus]?.map(order => (
-              <OrderCard key={order.id} onClick={() => setSelectedOrder(order)} $status={order.orderStatus}>
-                <h3>{order.drinkName}</h3>
-                <p>Customer: {order.customerName}</p>
-                <p>Location: {order.seatingLocation}</p>
-                <p>Time: {new Date(order.timestamp).toLocaleTimeString()}</p>
-              </OrderCard>
-            ))}
-          </OrdersGrid>
-        </StatusSection>
-      ))}
-
-      {selectedOrder && (
-        <Overlay onClick={() => setSelectedOrder(null)}>
-          <OrderDialog onClick={e => e.stopPropagation()}>
-            <h2>Order Details</h2>
-            <p><strong>Drink:</strong> {selectedOrder.drinkName}</p>
-            <p><strong>Customer:</strong> {selectedOrder.customerName}</p>
-            <p><strong>Location:</strong> {selectedOrder.seatingLocation}</p>
-            {selectedOrder.specialInstructions && (
-              <p><strong>Special Instructions:</strong> {selectedOrder.specialInstructions}</p>
-            )}
-            {selectedOrder.toppings && selectedOrder.toppings.length > 0 && (
-              <p><strong>Toppings:</strong> {selectedOrder.toppings.join(', ')}</p>
-            )}
-            <div style={{ marginTop: '1rem' }}>
-              <strong>Update Status:</strong>
-              {['Brewing', 'On Hold', 'Delivered'].map(status => (
-                <StatusButton
-                  key={status}
-                  $status={status}
-                  onClick={() => handleStatusUpdate(selectedOrder.id, status as OrderStatus)}
-                >
-                  {status}
-                </StatusButton>
-              ))}
-            </div>
-          </OrderDialog>
-        </Overlay>
-      )}
+      {renderOrderList(orders.filter(o => o.orderStatus === 'New'), 'New Orders')}
+      {renderOrderList(orders.filter(o => o.orderStatus === 'Brewing'), 'Currently Brewing')}
+      {renderOrderList(orders.filter(o => o.orderStatus === 'On Hold'), 'On Hold')}
+      {renderOrderList(orders.filter(o => o.orderStatus === 'Delivered'), 'Completed Orders')}
     </Container>
   );
 };

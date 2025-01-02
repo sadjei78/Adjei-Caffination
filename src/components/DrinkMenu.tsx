@@ -227,6 +227,22 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
     };
   }, [drinks]); // Re-run when drinks change
 
+  useEffect(() => {
+    // Create array of localStorage entries
+    const storageData = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        const value = localStorage.getItem(key);
+        storageData.push({ key, value });
+      }
+    }
+
+    // Log as table
+    console.log('localStorage contents:');
+    console.table(storageData);
+  }, []);
+
   return (
     <>
       <div className="menu-page" />

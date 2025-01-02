@@ -1,148 +1,163 @@
-import axios from 'axios';
 import { Order, OrderStatus } from '../types/types';
-import { google } from 'googleapis';
 
-const sheets = google.sheets('v4');
-
-const API_URL = import.meta.env.VITE_API_URL;
-if (!API_URL) {
-    throw new Error('API URL not configured in environment variables');
-}
-
-// Generate or retrieve customer ID
-const getCustomerId = (): string => {
-    let customerId = localStorage.getItem('customerId');
-    if (!customerId) {
-        customerId = `cust_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem('customerId', customerId);
-    }
-    return customerId;
+// Get orders from localStorage
+const getStoredOrders = (): Order[] => {
+  const orders = localStorage.getItem('orders');
+  return orders ? JSON.parse(orders) : [];
 };
 
-// Save a new order
-export const saveOrder = async (orderData: Omit<Order, 'id'>): Promise<Order> => {
-    try {
-        const response = await axios.post(`${API_URL}/orders`, {
-            ...orderData,
-            customerId: getCustomerId()
+// Save orders to localStorage
+const saveOrdersToStorage = (orders: Order[]) => {
+  localStorage.setItem('orders', JSON.stringify(orders));
+};
+
+const FORM_ID = import.meta.env.VITE_FORM_ID;
+const FORM_URL = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`;
+
+const SHEET_ID = import.meta.env.VITE_GOOGLE_SHEET_ID;
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=1437859386`;
+
+// Add interface for sheet data
+// interface SheetOrder {
+//   id: string;
+//   status: OrderStatus;
+//   timestamp: string;
+// }
+
+const submitToGoogleForm = async (order: Order, status: OrderStatus) => {
+//   const formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLScYYr5GBM3rJusGkhY11lEvh8pR9TGm74iytQsQFNbUeMXZdQ/formResponse';
+  
+  const params = new URLSearchParams({
+    'entry.1820405638': order.id,
+    'entry.1193225583': order.id,
+    'entry.1811585605': order.customerName,
+    'entry.2057993662': order.drinkName,
+    'entry.344098071': order.specialInstructions || '',
+    'entry.1278574187': status
+  });
+
+  if (order.toppings && order.toppings.length > 0) {
+    order.toppings.forEach(topping => {
+      params.append('entry.467545116', topping);
+    });
+  }
+
+  try {
+    await fetch(FORM_URL + '?' + params.toString(), {
+      method: 'GET',
+      mode: 'no-cors',
+      credentials: 'omit'
+    });
+    console.log('Form submission attempted');
+    return true;
+  } catch (error) {
+    console.error('Form submission error:', error);
+    return false;
+  }
+};
+
+// Save order
+export const saveOrder = async (orderData: Omit<Order, 'id' | 'orderStatus' | 'timestamp'>): Promise<Order> => {
+  const orders = getStoredOrders();
+  const newOrder: Order = {
+    ...orderData,
+    id: Math.random().toString(36).substr(2, 9),
+    orderStatus: 'New',
+    timestamp: new Date().toISOString()
+  };
+  
+  orders.push(newOrder);
+  saveOrdersToStorage(orders);
+  await submitToGoogleForm(newOrder, newOrder.orderStatus);
+  return newOrder;
+};
+
+// Add sync function
+const syncOrdersWithSheet = async () => {
+  try {
+    const response = await fetch(SHEET_URL, {
+      cache: 'no-store',  // Force fresh request
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
+    
+    const text = await response.text();
+    const jsonText = text.replace('/*O_o*/', '')
+                        .replace('google.visualization.Query.setResponse(', '')
+                        .replace(');', '');
+    const jsonData = JSON.parse(jsonText);
+    
+    console.log('Raw sheet data:', jsonData.table.rows);
+    
+    const sheetOrders = jsonData.table.rows
+      .slice(1) // Skip header row
+      .map((row: any) => {
+        // Log raw row data to see column positions
+        console.log('Raw row:', row.c.map((col: any) => col?.v));
+        
+        const order = {
+          timestamp: row.c[0]?.v,        // Column A: Timestamp
+          id: row.c[1]?.v,              // Column B: OrderID
+          // CustomerID is at row.c[2]   // Column C: CustomerID (skipped)
+          customerName: row.c[3]?.v,     // Column D: CustomerName
+          drinkName: row.c[4]?.v,        // Column E: DrinkName
+          toppings: row.c[5]?.v ? row.c[5]?.v.split(',').map((t: string) => t.trim()) : [], // Column F: Toppings
+          specialInstructions: '',        // Not in sheet anymore
+          orderStatus: row.c[7]?.v as OrderStatus, // Column H: Status
+          seatingLocation: row.c[6]?.v || '',     // Column G: Seating Location
+          current: row.c[8]?.v                    // Column I: Current
+        };
+        console.log('Mapped order:', order);
+        return order;
+      })
+      .filter((order: Order) => {
+        console.log('Checking order:', order.id, {
+          hasId: !!order.id,
+          hasCustomer: !!order.customerName,
+          hasDrink: !!order.drinkName,
+          hasCurrent: !!order.current,
+          currentValue: order.current
         });
-        await saveOrderToSheet(response.data);
-        return response.data;
-    } catch (error: any) {
-        console.error('Error saving order:', error.response?.data || error.message);
-        throw error;
-    }
+        return order.id && 
+               order.customerName && 
+               order.drinkName && 
+               order.current;
+      });
+
+    console.log('Filtered orders:', sheetOrders);
+    
+    saveOrdersToStorage(sheetOrders);
+    return sheetOrders;
+  } catch (error) {
+    console.error('Failed to sync with sheet:', error);
+    return getStoredOrders();
+  }
 };
 
-// Get all orders
-export const getOrders = async (): Promise<Order[]> => {
-    try {
-        const response = await axios.get(`${API_URL}/orders`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching orders:', error);
-        return [];
-    }
+// Update getUserOrders to only show localStorage orders
+export const getUserOrders = async (): Promise<Order[]> => {
+  return getStoredOrders();
 };
 
-// Get orders for a specific customer
-export const getUserOrders = async (customerName: string): Promise<Order[]> => {
-    try {
-        const customerId = getCustomerId();
-        const response = await axios.get(`${API_URL}/orders/${customerId}`);
-        console.log('Response Data:', response.data);
-        const orders = Array.isArray(response.data) ? response.data : [];
-        return orders.filter((order: Order) => 
-            order.customerName.toLowerCase() === customerName.toLowerCase()
-        );
-    } catch (error) {
-        console.error('Error fetching user orders:', error);
-        return [];
-    }
+// Keep the original sync function for Barista view
+export const getAllOrders = async (): Promise<Order[]> => {
+  return syncOrdersWithSheet();
 };
 
 // Update order status
-export const updateOrderStatus = async (orderId: string, newStatus: OrderStatus): Promise<Order | null> => {
-    try {
-        const response = await axios.patch(`${API_URL}/orders/${orderId}`, {
-            orderStatus: newStatus
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error updating order status:', error);
-        return null;
-    }
-};
-
-// Get order statistics
-export const getOrderStats = async () => {
-    try {
-        const response = await axios.get(`${API_URL}/stats`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching order stats:', error);
-        return {
-            total: 0,
-            new: 0,
-            brewing: 0,
-            completed: 0,
-            cancelled: 0
-        };
-    }
-};
-
-export const saveOrderToSheet = async (orderData: Order) => {
-    const auth = new google.auth.GoogleAuth({
-        keyFile: process.env.SERVICE_ACCOUNT_FILE,
-        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
-
-    try {
-        const client = await auth.getClient();
-        const sheets = google.sheets({ version: 'v4', auth: client });
-        const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-
-        if (!spreadsheetId) {
-            throw new Error('Google Sheet ID not configured in environment variables');
-        }
-
-        // Get the current values in the sheet to find the next empty row
-        const getRowsResponse = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: 'Orders!A:A',
-        });
-
-        const rows = getRowsResponse.data.values || [];
-        const nextRow = rows.length + 1;
-
-        const range = `Orders!A${nextRow}`;
-
-        const values = [
-            [
-                orderData.timestamp,
-                orderData.id,
-                orderData.drinkName,
-                orderData.customerName,
-                orderData.seatingLocation,
-                orderData.toppings.join(', '),
-                orderData.specialInstructions || '',
-            ],
-        ];
-
-        const resource = {
-            values,
-        };
-
-        // Append the new order to the sheet
-        await sheets.spreadsheets.values.append({
-            spreadsheetId,
-            range,
-            valueInputOption: 'RAW',
-            resource,
-        });
-
-        console.log('Order saved to Google Sheets successfully');
-    } catch (error: any) {
-        console.error('Error saving order to Google Sheets:', error.message || error);
-    }
+export const updateOrderStatus = async (orderId: string, status: OrderStatus): Promise<Order | null> => {
+  const orders = getStoredOrders();
+  const orderIndex = orders.findIndex(order => order.id === orderId);
+  
+  if (orderIndex === -1) return null;
+  
+  orders[orderIndex].orderStatus = status;
+  saveOrdersToStorage(orders);
+  
+  // Submit status update to Google Form
+  await submitToGoogleForm(orders[orderIndex], status);
+  
+  return orders[orderIndex];
 }; 

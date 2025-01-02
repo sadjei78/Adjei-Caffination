@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: coffee-orders
+    env: static
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_GOOGLE_SHEET_ID
+        sync: false
+      - key: VITE_FORM_ID
+        sync: false

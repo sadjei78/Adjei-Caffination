@@ -1,50 +1,46 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import styled from '@emotion/styled';
+import { Link, useMatch } from 'react-router-dom';
 
-const Nav = styled.div`
-  padding: 1rem;
-  background: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-`;
+interface NavLinkProps {
+  $isActive: boolean;
+}
 
-const NavContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const NavLink = styled(Link)<{ $active: boolean }>`
+const NavLink = styled(Link)<NavLinkProps>`
   text-decoration: none;
-  color: ${props => props.$active ? '#4a90e2' : '#333'};
-  font-weight: ${props => props.$active ? 'bold' : 'normal'};
-  padding: 0.5rem 1rem;
+  color: ${props => props.$isActive ? '#007bff' : '#333'};
+  font-weight: ${props => props.$isActive ? 'bold' : 'normal'};
+  padding: 8px 16px;
   border-radius: 4px;
-
+  
   &:hover {
-    background: #f5f5f5;
+    background-color: #f8f9fa;
   }
 `;
 
-const Navigation: React.FC = () => {
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const showNav = searchParams.get('admin') === 'true';
+const Nav = styled.nav`
+  padding: 1rem;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+`;
 
-  if (!showNav) return null;
+const Navigation: React.FC = () => {
+  const SHEET_ID = import.meta.env.VITE_GOOGLE_SHEET_ID;
+  const FORM_ID = import.meta.env.VITE_FORM_ID;
+
+  // Check these are properly configured
+  if (!SHEET_ID || !FORM_ID) {
+    console.error('Environment variables VITE_GOOGLE_SHEET_ID and VITE_FORM_ID are not set up correctly.');
+  }
 
   return (
     <Nav>
-      <NavContainer>
-        <NavLink to="/" $active={location.pathname === '/'}>
-          Coffee Menu
-        </NavLink>
-        <NavLink to="/barista" $active={location.pathname === '/barista'}>
-          Barista View
-        </NavLink>
-      </NavContainer>
+      <NavLink to="/" $isActive={useMatch("/") !== null}>
+        Order
+      </NavLink>
+      <NavLink to="/barista" $isActive={useMatch("/barista") !== null}>
+        Barista View
+      </NavLink>
     </Nav>
   );
 };

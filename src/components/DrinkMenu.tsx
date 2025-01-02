@@ -2,11 +2,23 @@ import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import { DrinkItem } from '../types/types';
 
-const MenuContainer = styled.div`
-  position: relative;
-  min-height: 100vh;
-  padding: 1rem;
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+`;
+
+const Header = styled.div`
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+`;
+
+const ScrollableContent = styled.div`
+  flex: 1;
   overflow-y: auto;
+  padding: 20px;
+  padding-bottom: 480px;
 `;
 
 const MenuColumn = styled.div`
@@ -244,13 +256,14 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
   }, []);
 
   return (
-    <>
-      <div className="menu-page" />
-      <MenuContainer>
+    <Container>
+      <Header>
+        <CafeName>Adjei Caffi-Nation</CafeName>
         <MyOrdersButton onClick={onMyOrdersClick}>
           My Orders
         </MyOrdersButton>
-        <CafeName>Adjei Caffi-Nation</CafeName>
+      </Header>
+      <ScrollableContent>
         <MenuGrid>
           <MenuColumn>
             <h2>Hot Drinks</h2>
@@ -291,8 +304,8 @@ const DrinkMenu: React.FC<DrinkMenuProps> = ({ drinks, onOrderClick, onMyOrdersC
         <MobileTooltip $isVisible={!!activeDescription}>
           {activeDescription}
         </MobileTooltip>
-      </MenuContainer>
-    </>
+      </ScrollableContent>
+    </Container>
   );
 };
 

@@ -116,6 +116,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ drink, onClose, onSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Save customer name for future use
+    localStorage.setItem('customerName', customerName);
+    
     const orderData = {
       drinkName: drink.name,
       temperature: drink.temperature,

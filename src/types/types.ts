@@ -19,6 +19,7 @@ export interface Order {
     customerId: string;
     customerName: string;
     drinkName: string;
+    seatingLocation: string;
     toppings?: string[];
     specialInstructions?: string;
     orderStatus: OrderStatus;
@@ -27,7 +28,6 @@ export interface Order {
     feedbackComment?: string;
     feedbackTimestamp?: string;
     current?: string;
-    seatingLocation?: string;
 }
 
 export interface OrderFormData {

@@ -32,6 +32,7 @@ const submitToGoogleForm = async (order: Order, status: OrderStatus) => {
   params.append('entry.1193225583', order.customerId);
   params.append('entry.1811585605', order.customerName);
   params.append('entry.2057993662', order.drinkName);
+  params.append('entry.1843383527', order.seatingLocation);
   if (order.toppings?.length) {
     order.toppings.forEach(topping => {
       params.append('entry.467545116', topping);
@@ -130,12 +131,13 @@ const syncOrdersWithSheet = async () => {
           customerName: row.c[3]?.v,     // Column D: Customer Name
           drinkName: row.c[4]?.v,        // Column E: Drink Name
           toppings: row.c[5]?.v ? row.c[5]?.v.split(',').map((t: string) => t.trim()) : [], // Column F: Toppings
-          specialInstructions: row.c[6]?.v || '',  // Column G: Special Instruction
+          specialInstructions: row.c[6]?.v || '',  // Column G: Special Instructions
           orderStatus: row.c[7]?.v as OrderStatus, // Column H: Status
           rating: row.c[8]?.v,           // Column I: Rating
           feedbackComment: row.c[9]?.v,  // Column J: Feedback Comment
           feedbackTimestamp: row.c[10]?.v, // Column K: Feedback Timestamp
-          current: row.c[11]?.v          // Column L: Current
+          seatingLocation: row.c[11]?.v || 'Not specified', // Column L: Seating Location
+          current: row.c[12]?.v          // Column M: Current
         };
         return order;
       })
